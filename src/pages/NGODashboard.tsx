@@ -60,23 +60,121 @@ const NGODashboard = () => {
               <div className="p-3 bg-primary-light rounded-full">
                 <Trophy className="w-6 h-6 text-primary" />
               </div>
+              <div>
+                <p className="text-sm text-gray-600">NGO Rating</p>
+                <h3 className="text-2xl font-bold">{user?.xp || 0} XP</h3>
+              </div>
+            </div>
+          </Card>
 
-### What's next?
-- **Refine & Customize**: Tweak the design, animations, and layouts via prompts or visual edits.  Focus on the green and environment-related color palette.
-- **Master Prompting**: Use clear, detailed, and iterative prompts for better outcomes.
-- **Expand with Backend**: Connect Supabase for authentication, database management (users, NGOs, reports), and integrate the necessary APIs for map functionality and email notifications. Implement the human verification step before report submission. Award NGOs 200 XP points for each solved issue.
-- **GitHub Sync**: Transfer your project's code to GitHub for two-way sync of edits.
-- **Debug with Ease**: Activate our experimental “chat mode” to troubleshoot issues quickly.
-- **Add project knowledge**: Set key context or custom instructions you want to include in every edit in this project.
+          <Card className="p-6">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-primary-light rounded-full">
+                <AlertCircle className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Pending Issues</p>
+                <h3 className="text-2xl font-bold">
+                  {reports.filter((r) => r.status === "pending").length}
+                </h3>
+              </div>
+            </div>
+          </Card>
 
-<lov-actions>
-<lov-knowledge>
-</lov-actions>
+          <Card className="p-6">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-primary-light rounded-full">
+                <CheckCircle className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Solved Issues</p>
+                <h3 className="text-2xl font-bold">
+                  {reports.filter((r) => r.status === "solved").length}
+                </h3>
+              </div>
+            </div>
+          </Card>
+        </div>
 
-<lov-actions>
-<lov-message-prompt message="Tell me more about Supabase">Explore Supabase</lov-message-prompt>
-</lov-actions>
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <h2 className="text-xl font-semibold text-gray-800">
+              Active Reports
+            </h2>
+            {reports.map((report) => (
+              <Card key={report.id} className="p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-gray-800">
+                      {report.title}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      <MapPin className="w-4 h-4 inline mr-1" />
+                      {report.location}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Reported by: {report.reporter}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Date: {report.date}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        report.priority === "high"
+                          ? "bg-red-100 text-red-800"
+                          : report.priority === "medium"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-green-100 text-green-800"
+                      }`}
+                    >
+                      {report.priority}
+                    </span>
+                    <Button size="sm">View Details</Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
 
-<lov-actions>
-<lov-link url="https://docs.lovable.dev/">Visit docs</lov-link>
-</lov-actions>
+          <div>
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                NGO Leaderboard
+              </h2>
+              <div className="space-y-4">
+                {ngoLeaderboard.map((ngo, index) => (
+                  <div
+                    key={ngo.id}
+                    className="flex items-center justify-between p-2 rounded-lg bg-gray-50"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium ${
+                          index === 0
+                            ? "bg-yellow-400 text-white"
+                            : index === 1
+                            ? "bg-gray-300 text-gray-800"
+                            : index === 2
+                            ? "bg-amber-600 text-white"
+                            : "bg-gray-200 text-gray-800"
+                        }`}
+                      >
+                        {index + 1}
+                      </span>
+                      <span className="font-medium">{ngo.name}</span>
+                    </div>
+                    <span className="text-sm text-gray-600">{ngo.xp} XP</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default NGODashboard;
