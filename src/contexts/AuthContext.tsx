@@ -2,17 +2,19 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 
-interface User {
+interface Profile {
   id: string;
-  email: string;
   name: string;
   type: "citizen" | "ngo";
-  xp: number;
+  xp_points: number;
 }
 
 interface AuthContextType {
   user: User | null;
+  profile: Profile | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
@@ -21,59 +23,79 @@ interface AuthContextType {
     name: string,
     type: "citizen" | "ngo"
   ) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check for stored auth token and validate it
-    const checkAuth = async () => {
-      try {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-      } finally {
-        setLoading(false);
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
       }
-    };
+    });
 
-    checkAuth();
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        await fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const fetchProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching profile:", error);
+      return;
+    }
+
+    setProfile(data);
+  };
 
   const login = async (email: string, password: string) => {
     try {
-      // TODO: Implement actual authentication
-      const mockUser = {
-        id: "1",
+      const { error } = await supabase.auth.signInWithPassword({
         email,
-        name: "John Doe",
-        type: "citizen" as const,
-        xp: 100,
-      };
-      setUser(mockUser);
-      localStorage.setItem("user", JSON.stringify(mockUser));
+        password,
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
-      navigate(mockUser.type === "citizen" ? "/citizen/dashboard" : "/ngo/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed:", error);
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: error.message || "Please check your credentials and try again.",
       });
+      throw error;
     }
   };
 
@@ -84,39 +106,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     type: "citizen" | "ngo"
   ) => {
     try {
-      // TODO: Implement actual registration
-      const mockUser = {
-        id: "1",
+      // Sign up the user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
-        name,
-        type,
-        xp: 0,
-      };
-      setUser(mockUser);
-      localStorage.setItem("user", JSON.stringify(mockUser));
+        password,
+      });
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // Create profile
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert([
+            {
+              id: authData.user.id,
+              name,
+              type,
+              xp_points: 0,
+            },
+          ]);
+
+        if (profileError) throw profileError;
+      }
+
       toast({
         title: "Welcome!",
         description: "Your account has been created successfully.",
       });
-      navigate(type === "citizen" ? "/citizen/dashboard" : "/ngo/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration failed:", error);
       toast({
         variant: "destructive",
         title: "Registration failed",
-        description: "Please try again later.",
+        description: error.message || "Please try again later.",
       });
+      throw error;
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem("user");
+    setProfile(null);
     navigate("/");
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, profile, loading, login, register, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

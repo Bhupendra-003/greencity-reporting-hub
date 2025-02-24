@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Camera, MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ReportIssue = () => {
   const [title, setTitle] = useState("");
@@ -32,7 +34,7 @@ const ReportIssue = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !description || !severity || !verified) {
+    if (!title || !description || !severity || !verified || !location) {
       toast({
         variant: "destructive",
         title: "Missing fields",
@@ -43,18 +45,55 @@ const ReportIssue = () => {
 
     try {
       setLoading(true);
-      // TODO: Implement actual report submission
+
+      let imageUrl = null;
+      if (image) {
+        const fileExt = image.name.split(".").pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const { error: uploadError, data } = await supabase.storage
+          .from("issue-images")
+          .upload(fileName, image);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("issue-images")
+          .getPublicUrl(fileName);
+        
+        imageUrl = publicUrl;
+      }
+
+      // Convert location string to point
+      const [lat, lng] = location.split(",").map(coord => parseFloat(coord.trim()));
+      const point = `POINT(${lng} ${lat})`;
+
+      const { error } = await supabase.from("issues").insert([
+        {
+          title,
+          description,
+          severity,
+          location: point,
+          image_url: imageUrl,
+          reporter_id: user?.id,
+          status: "pending",
+        },
+      ]);
+
+      if (error) throw error;
+
       toast({
         title: "Report submitted",
         description: "Your issue has been reported successfully",
       });
       navigate("/citizen/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to submit report:", error);
       toast({
         variant: "destructive",
         title: "Submission failed",
-        description: "Please try again later",
+        description: error.message || "Please try again later",
       });
     } finally {
       setLoading(false);
@@ -65,7 +104,6 @@ const ReportIssue = () => {
     const file = e.target.files?.[0];
     if (file) {
       setImage(file);
-      // Create image preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
