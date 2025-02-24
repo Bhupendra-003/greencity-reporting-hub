@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -23,18 +23,20 @@ const ReportIssue = () => {
   const [severity, setSeverity] = useState("");
   const [location, setLocation] = useState("");
   const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [verified, setVerified] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !description || !severity) {
+    if (!title || !description || !severity || !verified) {
       toast({
         variant: "destructive",
         title: "Missing fields",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields and verify you are human",
       });
       return;
     }
@@ -63,6 +65,12 @@ const ReportIssue = () => {
     const file = e.target.files?.[0];
     if (file) {
       setImage(file);
+      // Create image preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -185,13 +193,32 @@ const ReportIssue = () => {
                     <Camera className="w-4 h-4 mr-2" />
                     Upload Image
                   </Button>
-                  {image && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Image selected: {image.name}
-                    </p>
-                  )}
                 </div>
               </div>
+            </div>
+
+            {imagePreview && (
+              <div className="mt-4">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full max-h-64 object-cover rounded-lg"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="verify"
+                checked={verified}
+                onCheckedChange={(checked) => setVerified(checked as boolean)}
+              />
+              <label
+                htmlFor="verify"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                I verify that I am a human and this is a genuine report
+              </label>
             </div>
 
             <div className="flex space-x-4">
@@ -202,7 +229,7 @@ const ReportIssue = () => {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || !verified}>
                 {loading ? "Submitting..." : "Submit Report"}
               </Button>
             </div>

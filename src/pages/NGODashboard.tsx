@@ -2,10 +2,19 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertCircle, Trophy, CheckCircle, MapPin } from "lucide-react";
+import { AlertCircle, Trophy, CheckCircle, MapPin, X } from "lucide-react";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 const NGODashboard = () => {
   const { user, logout } = useAuth();
+  const [selectedReport, setSelectedReport] = useState<any>(null);
 
   // Mock data for demonstration
   const reports = [
@@ -17,6 +26,9 @@ const NGODashboard = () => {
       date: "2024-02-20",
       location: "Main Street",
       reporter: "John Doe",
+      description: "The street light has been flickering for the past week",
+      image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7",
+      coordinates: "51.5074° N, 0.1278° W"
     },
     {
       id: 2,
@@ -26,6 +38,9 @@ const NGODashboard = () => {
       date: "2024-02-19",
       location: "Park Avenue",
       reporter: "Jane Smith",
+      description: "Garbage has not been collected for 3 days",
+      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7",
+      coordinates: "51.5074° N, 0.1278° W"
     },
   ];
 
@@ -131,7 +146,9 @@ const NGODashboard = () => {
                     >
                       {report.priority}
                     </span>
-                    <Button size="sm">View Details</Button>
+                    <Button size="sm" onClick={() => setSelectedReport(report)}>
+                      View Details
+                    </Button>
                   </div>
                 </div>
               </Card>
@@ -173,6 +190,51 @@ const NGODashboard = () => {
           </div>
         </div>
       </main>
+
+      <Dialog open={!!selectedReport} onOpenChange={() => setSelectedReport(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">
+              Issue Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedReport && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="font-semibold text-lg">{selectedReport.title}</h3>
+                <p className="text-sm text-gray-600">{selectedReport.description}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Location</p>
+                  <p className="text-sm">{selectedReport.location}</p>
+                  <p className="text-sm text-gray-600">{selectedReport.coordinates}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Reporter</p>
+                  <p className="text-sm">{selectedReport.reporter}</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-500 mb-2">Image</p>
+                <img
+                  src={selectedReport.image}
+                  alt="Issue"
+                  className="w-full h-64 object-cover rounded-lg"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <DialogClose asChild>
+                  <Button variant="outline">Close</Button>
+                </DialogClose>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
