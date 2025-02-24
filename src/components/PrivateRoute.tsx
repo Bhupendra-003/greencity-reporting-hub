@@ -8,18 +8,18 @@ interface PrivateRouteProps {
 }
 
 export function PrivateRoute({ children, userType }: PrivateRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
 
   if (loading) {
     return <div>Loading...</div>;
   }
 
-  if (!user) {
+  if (!user || !profile) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.type !== userType) {
-    return <Navigate to={`/${user.type}/dashboard`} replace />;
+  if (profile.type !== userType) {
+    return <Navigate to={`/${profile.type}/dashboard`} replace />;
   }
 
   return <>{children}</>;

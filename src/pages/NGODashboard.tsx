@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { AlertCircle, Trophy, CheckCircle, MapPin, X, Camera } from "lucide-react";
+import { AlertCircle, Trophy, CheckCircle, MapPin, Camera } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -68,7 +69,16 @@ const NGODashboard = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setIssues(data || []);
+
+      // Transform the location data from POINT type to string
+      const transformedData = (data || []).map(issue => ({
+        ...issue,
+        location: typeof issue.location === 'string' 
+          ? issue.location 
+          : `${issue.location.x}, ${issue.location.y}` // Assuming location is a POINT type
+      }));
+
+      setIssues(transformedData);
     } catch (error) {
       console.error("Error fetching issues:", error);
     }
