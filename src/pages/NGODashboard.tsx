@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,28 +29,39 @@ interface Issue {
   solved_at: string | null;
 }
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  type: "citizen" | "ngo";
+  xp_points: number;
+}
+
 const NGODashboard = () => {
-  const { user, updateUserXP } = useAuth();
+  const { user, logout, updateUserXP } = useAuth();
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [topNGOs, setTopNGOs] = useState<User[]>([]);
   const [solutionImage, setSolutionImage] = useState<File | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Sort issues by severity (high -> medium -> low)
-    const sortedIssues = [...issuesData.issues].sort((a, b) => {
+    // Load issues from localStorage
+    const storedIssues = JSON.parse(localStorage.getItem("issuesData") || "{}");
+    const sortedIssues = [...storedIssues.issues].sort((a, b) => {
       const severityOrder = { high: 3, medium: 2, low: 1 };
       return severityOrder[b.severity as keyof typeof severityOrder] - 
              severityOrder[a.severity as keyof typeof severityOrder];
     });
     setIssues(sortedIssues);
-  }, []);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      setSolutionImage(event.target.files[0]);
-    }
-  };
+    // Load top NGOs
+    const storedData = JSON.parse(localStorage.getItem("usersData") || "{}");
+    const sortedNGOs = [...storedData.ngos]
+      .sort((a, b) => b.xp_points - a.xp_points)
+      .slice(0, 5);
+    setTopNGOs(sortedNGOs);
+  }, []);
 
   const handleSolveIssue = async () => {
     if (!selectedIssue || !solutionImage) {
@@ -64,10 +74,9 @@ const NGODashboard = () => {
     }
 
     try {
-      // In a real app, we would upload the image to a server
       const imageUrl = URL.createObjectURL(solutionImage);
       
-      // Update the issue in our local data
+      // Update the issues data
       const updatedIssues = issues.map(issue => 
         issue.id === selectedIssue.id 
           ? {
@@ -80,14 +89,15 @@ const NGODashboard = () => {
           : issue
       );
 
+      // Update localStorage
+      const storedIssues = JSON.parse(localStorage.getItem("issuesData") || "{}");
+      storedIssues.issues = updatedIssues;
+      localStorage.setItem("issuesData", JSON.stringify(storedIssues));
       setIssues(updatedIssues);
       
-      // Update NGO's XP points
-      const newXP = (user?.xp_points || 0) + 10;
+      // Update NGO's XP points (+200 per solved issue)
+      const newXP = (user?.xp_points || 0) + 200;
       updateUserXP(user!.id, newXP);
-
-      // Send email notification (mock)
-      console.log(`Email sent to citizen about issue resolution by ${user?.name}`);
 
       toast({
         title: "Success",
@@ -105,6 +115,12 @@ const NGODashboard = () => {
     }
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSolutionImage(event.target.files[0]);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
@@ -115,7 +131,7 @@ const NGODashboard = () => {
               <span className="text-sm text-gray-600">
                 Welcome, {user?.name}
               </span>
-              <Button variant="outline" onClick={() => {}}>
+              <Button variant="outline" onClick={logout}>
                 Logout
               </Button>
             </div>
@@ -209,6 +225,25 @@ const NGODashboard = () => {
           ))}
         </div>
       </main>
+
+      {/* Add Leaderboard */}
+      <div className="container mx-auto px-4 py-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Top NGOs</h2>
+        <div className="space-y-4">
+          {topNGOs.map((ngo, index) => (
+            <Card key={ngo.id} className="p-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-semibold text-gray-800">
+                    #{index + 1} {ngo.name}
+                  </h3>
+                  <p className="text-sm text-gray-600">XP Points: {ngo.xp_points}</p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
 
       <Dialog open={!!selectedIssue} onOpenChange={() => setSelectedIssue(null)}>
         <DialogContent className="max-w-2xl">

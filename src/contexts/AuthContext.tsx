@@ -41,7 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const allUsers = [...usersData.citizens, ...usersData.ngos] as UserWithPassword[];
+      const storedData = JSON.parse(localStorage.getItem("usersData") || JSON.stringify(usersData));
+      const allUsers = [...storedData.citizens, ...storedData.ngos] as UserWithPassword[];
       const foundUser = allUsers.find(
         (u) => u.email === email && u.password === password
       );
@@ -80,6 +81,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ) => {
     try {
       setLoading(true);
+      const storedData = JSON.parse(localStorage.getItem("usersData") || JSON.stringify(usersData));
+      
+      // Check if email already exists
+      const allUsers = [...storedData.citizens, ...storedData.ngos];
+      if (allUsers.some(u => u.email === email)) {
+        throw new Error("Email already registered");
+      }
+
       const newUser: UserWithPassword = {
         id: Math.random().toString(),
         email,
@@ -89,16 +98,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         xp_points: 0,
       };
 
-      // Update local storage with users data
-      const currentData = { ...usersData };
-      if (type === "citizen") {
-        currentData.citizens.push(newUser);
-      } else {
-        currentData.ngos.push(newUser);
-      }
+      // Update users data
+      const updatedData = {
+        ...storedData,
+        [type === "citizen" ? "citizens" : "ngos"]: [
+          ...storedData[type === "citizen" ? "citizens" : "ngos"],
+          newUser
+        ]
+      };
 
-      // In a real app, this would be a backend call
-      localStorage.setItem("usersData", JSON.stringify(currentData));
+      localStorage.setItem("usersData", JSON.stringify(updatedData));
 
       const { password: _, ...userWithoutPassword } = newUser;
       setUser(userWithoutPassword);
@@ -129,14 +138,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Update localStorage
     localStorage.setItem("user", JSON.stringify(updatedUser));
     
-    // Update users data in localStorage
-    const currentData = JSON.parse(localStorage.getItem("usersData") || JSON.stringify(usersData));
+    // Update users data
+    const storedData = JSON.parse(localStorage.getItem("usersData") || JSON.stringify(usersData));
     const updatedData = {
-      ...currentData,
-      citizens: currentData.citizens.map((c: UserWithPassword) => 
+      ...storedData,
+      citizens: storedData.citizens.map((c: UserWithPassword) => 
         c.id === userId ? { ...c, xp_points: newXP } : c
       ),
-      ngos: currentData.ngos.map((n: UserWithPassword) => 
+      ngos: storedData.ngos.map((n: UserWithPassword) => 
         n.id === userId ? { ...n, xp_points: newXP } : n
       )
     };
@@ -146,11 +155,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
-    navigate("/");
+    navigate("/login");
   };
 
   useEffect(() => {
-    // Initialize users data in localStorage if not present
+    // Initialize users data if not present
     if (!localStorage.getItem("usersData")) {
       localStorage.setItem("usersData", JSON.stringify(usersData));
     }

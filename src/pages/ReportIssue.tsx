@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Camera, MapPin } from "lucide-react";
 
 const ReportIssue = () => {
+  const { user, updateUserXP } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState("");
@@ -28,11 +29,10 @@ const ReportIssue = () => {
   const [verified, setVerified] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !description || !severity || !verified) {
+    if (!title || !description || !severity || !verified || !location) {
       toast({
         variant: "destructive",
         title: "Missing fields",
@@ -43,7 +43,34 @@ const ReportIssue = () => {
 
     try {
       setLoading(true);
-      // TODO: Implement actual report submission
+
+      // Create new issue
+      const newIssue = {
+        id: Math.random().toString(),
+        title,
+        description,
+        status: "pending",
+        severity,
+        location,
+        reporter_id: user!.id,
+        image_url: null,
+        created_at: new Date().toISOString(),
+        solver_id: null,
+        solution_image_url: null,
+        solved_at: null
+      };
+
+      // Update issues in localStorage
+      const storedIssues = JSON.parse(localStorage.getItem("issuesData") || "{}");
+      const updatedIssues = {
+        issues: [...(storedIssues.issues || []), newIssue]
+      };
+      localStorage.setItem("issuesData", JSON.stringify(updatedIssues));
+
+      // Update user's XP points (+50 for reporting an issue)
+      const newXP = (user?.xp_points || 0) + 50;
+      updateUserXP(user!.id, newXP);
+
       toast({
         title: "Report submitted",
         description: "Your issue has been reported successfully",

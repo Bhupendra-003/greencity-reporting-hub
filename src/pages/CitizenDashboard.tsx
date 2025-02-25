@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,18 +23,35 @@ interface Issue {
   solver_id: string | null;
 }
 
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  type: "citizen" | "ngo";
+  xp_points: number;
+}
+
 const CitizenDashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [topCitizens, setTopCitizens] = useState<User[]>([]);
   const navigate = useNavigate();
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   useEffect(() => {
-    // Filter issues for the current user
-    const userIssues = issuesData.issues.filter(
-      (issue) => issue.reporter_id === user?.id
+    // Load user's issues
+    const storedIssues = JSON.parse(localStorage.getItem("issuesData") || "{}");
+    const userIssues = storedIssues.issues.filter(
+      (issue: any) => issue.reporter_id === user?.id
     );
     setIssues(userIssues);
+
+    // Load top citizens
+    const storedData = JSON.parse(localStorage.getItem("usersData") || "{}");
+    const sortedCitizens = [...storedData.citizens]
+      .sort((a: any, b: any) => b.xp_points - a.xp_points)
+      .slice(0, 5);
+    setTopCitizens(sortedCitizens);
   }, [user]);
 
   return (
@@ -50,7 +66,7 @@ const CitizenDashboard = () => {
               <span className="text-sm text-gray-600">
                 Welcome, {user?.name}
               </span>
-              <Button variant="outline" onClick={() => {}}>
+              <Button variant="outline" onClick={logout}>
                 Logout
               </Button>
             </div>
@@ -140,6 +156,25 @@ const CitizenDashboard = () => {
           ))}
         </div>
       </main>
+
+      {/* Add Leaderboard */}
+      <div className="container mx-auto px-4 py-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Top Citizens</h2>
+        <div className="space-y-4">
+          {topCitizens.map((citizen, index) => (
+            <Card key={citizen.id} className="p-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-semibold text-gray-800">
+                    #{index + 1} {citizen.name}
+                  </h3>
+                  <p className="text-sm text-gray-600">XP Points: {citizen.xp_points}</p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
 
       <Dialog open={!!selectedIssue} onOpenChange={() => setSelectedIssue(null)}>
         <DialogContent className="max-w-2xl">
