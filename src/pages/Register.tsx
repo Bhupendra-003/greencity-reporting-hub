@@ -36,7 +36,7 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-light to-white flex items-center justify-center p-4">
+    <div style={{ backgroundImage: "url('https://images.unsplash.com/photo-1547936785-c57315d64694?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGdyZWVuJTIwcGF0dGVybnxlbnwwfHwwfHx8MA%3D%3D')", backgroundSize: 'cover', backgroundPosition: 'center' }} className="min-h-screen bg-gradient-to-b from-primary-light to-white flex items-center justify-center p-4">
       <Card className="w-full max-w-md p-6">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-primary-dark">Create Account</h1>
@@ -85,16 +85,16 @@ const Register = () => {
               <SelectTrigger>
                 <SelectValue placeholder="Select account type" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="citizen">Citizen</SelectItem>
-                <SelectItem value="ngo">NGO</SelectItem>
+              <SelectContent className="bg-white">
+                <SelectItem className="bg-white" value="citizen">Citizen</SelectItem>
+                <SelectItem className="bg-white" value="ngo">NGO</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <Button
             type="submit"
-            className="w-full"
+            className="w-full bg-green-700 hover:bg-primary-dark"
             disabled={loading}
           >
             {loading ? "Creating account..." : "Create Account"}

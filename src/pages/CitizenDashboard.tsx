@@ -68,7 +68,7 @@ const CitizenDashboard = () => {
     fetchIssues();
   }, [user]);
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ backgroundImage: "url('https://images.unsplash.com/photo-1601370690183-1c7796ecec61?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')", backgroundSize: 'cover', backgroundPosition: 'center' }} className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
@@ -115,7 +115,7 @@ const CitizenDashboard = () => {
         </div>
 
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-800">My Reports</h2>
+          <h2 className="text-xl font-semibold text-gray-100">My Reports</h2>
           <Button onClick={() => navigate("/citizen/report")}>
             Report New Issue
           </Button>
@@ -172,7 +172,7 @@ const CitizenDashboard = () => {
 
       {/* Add Leaderboard */}
       <div className="container mx-auto px-4 py-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Top Citizens</h2>
+        <h2 className="text-xl font-semibold text-gray-100 mb-4">Top Citizens</h2>
         <div className="space-y-4">
           {topCitizens.map((citizen, index) => (
             <Card key={citizen.id} className="p-4">

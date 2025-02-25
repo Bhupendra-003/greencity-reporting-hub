@@ -36,7 +36,7 @@ const LandingPage = () => {
       className="min-h-screen bg-gradient-to-b from-primary-light to-white">
       <div className="container mx-auto px-4 py-12">
         <nav className="flex justify-between items-center mb-16">
-          <h1 className="text-2xl font-bold text-white">Greenify</h1>
+          <h1 className="text-4xl font-[900] shadow-black shadow-md p-2 text-white">Greenify</h1>
           {user ? (
             <Button
               variant="outline"
@@ -55,18 +55,18 @@ const LandingPage = () => {
         </nav>
 
         <main>
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-4xl font-bold text-white bg-black rounded-lg p-2 mb-6">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-4xl font-bold text-white bg-black rounded-full py-4 mb-6">
               Making Our Cities Better, Together
             </h2>
-            <p className="text-lg text-gray-600 bg-white p-2 rounded-md mb-8">
+            <p className="text-lg text-gray-600 bg-white p-2 rounded-2xl mb-8">
               Join our community-driven platform to report and resolve urban issues.
               Together, we can create cleaner, safer, and more sustainable cities.
             </p>
             {!user && (
               <Button
                 size="lg"
-                className="animate-float bg-green-600"
+                className="animate-float text-xl bg-green-700"
                 onClick={() => navigate("/register")}
               >
                 Get Started
