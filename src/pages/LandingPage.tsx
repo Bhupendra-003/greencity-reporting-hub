@@ -35,7 +35,7 @@ const LandingPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-primary-light to-white">
       <div className="container mx-auto px-4 py-12">
         <nav className="flex justify-between items-center mb-16">
-          <h1 className="text-2xl font-bold text-primary-dark">GreenCity</h1>
+          <h1 className="text-2xl font-bold text-primary-dark">Greenify</h1>
           {user ? (
             <Button
               variant="outline"

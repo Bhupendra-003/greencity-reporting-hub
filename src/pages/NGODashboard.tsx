@@ -26,6 +26,7 @@ interface Issue {
   solver_id: string | null;
   solution_image_url: string | null;
   solved_at: string | null;
+  priorityRating: number | 0;
 }
 
 interface User {
@@ -48,9 +49,16 @@ const NGODashboard = () => {
     // Load issues from localStorage
     const storedIssues = JSON.parse(localStorage.getItem("issuesData") || "{}");
     const sortedIssues = [...storedIssues.issues].sort((a, b) => {
+      // First sort by severity
       const severityOrder = { high: 3, medium: 2, low: 1 };
-      return severityOrder[b.severity as keyof typeof severityOrder] -
+      const severityDiff = severityOrder[b.severity as keyof typeof severityOrder] -
         severityOrder[a.severity as keyof typeof severityOrder];
+
+      // If severity is equal, sort by priorityRating
+      if (severityDiff === 0) {
+        return (b.priorityRating || 0) - (a.priorityRating || 0);
+      }
+      return severityDiff;
     });
     setIssues(sortedIssues);
 
@@ -61,7 +69,6 @@ const NGODashboard = () => {
       .slice(0, 5);
     setTopNGOs(sortedNGOs);
   }, []);
-
   const refreshTopNGOs = () => {
     const storedData = JSON.parse(localStorage.getItem("usersData") || "{}");
     const sortedNGOs = [...storedData.ngos]
@@ -208,16 +215,21 @@ const NGODashboard = () => {
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${issue.severity === "high"
-                        ? "bg-red-100 text-red-800"
-                        : issue.severity === "medium"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-green-100 text-green-800"
-                      }`}
-                  >
-                    {issue.severity}
-                  </span>
+                  <div className="flex gap-2">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${issue.severity === "high"
+                          ? "bg-red-100 text-red-800"
+                          : issue.severity === "medium"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                    >
+                      {issue.severity}
+                    </span>
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Priority: {issue.priorityRating || 0}
+                    </span>
+                  </div>
                   <Button
                     size="sm"
                     onClick={() => setSelectedIssue(issue)}
@@ -229,6 +241,7 @@ const NGODashboard = () => {
               </div>
             </Card>
           ))}
+
         </div>
       </main>
 
