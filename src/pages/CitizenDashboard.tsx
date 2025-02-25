@@ -1,11 +1,28 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle, Trophy } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+
+// Mock data for development
+const mockIssues = [
+  {
+    id: "1",
+    title: "Broken Street Light",
+    status: "pending",
+    severity: "medium",
+    created_at: "2024-02-20"
+  },
+  {
+    id: "2",
+    title: "Garbage Collection",
+    status: "solved",
+    severity: "high",
+    created_at: "2024-02-19"
+  }
+];
 
 interface Issue {
   id: string;
@@ -16,30 +33,9 @@ interface Issue {
 }
 
 const CitizenDashboard = () => {
-  const { profile } = useAuth();
-  const [issues, setIssues] = useState<Issue[]>([]);
+  const { user } = useAuth();
+  const [issues] = useState<Issue[]>(mockIssues);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    fetchUserIssues();
-  }, []);
-
-  const fetchUserIssues = async () => {
-    if (!profile?.id) return;
-    
-    const { data, error } = await supabase
-      .from("issues")
-      .select("*")
-      .eq("reporter_id", profile.id)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching issues:", error);
-      return;
-    }
-
-    setIssues(data || []);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -51,9 +47,9 @@ const CitizenDashboard = () => {
             </h1>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                Welcome, {profile?.name}
+                Welcome, {user?.name}
               </span>
-              <Button variant="outline" onClick={() => supabase.auth.signOut()}>
+              <Button variant="outline" onClick={() => navigate("/")}>
                 Logout
               </Button>
             </div>

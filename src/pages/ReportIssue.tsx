@@ -15,22 +15,17 @@ import {
 } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { Camera, MapPin } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { MapPin } from "lucide-react";
 
 const ReportIssue = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState("");
   const [location, setLocation] = useState("");
-  const [image, setImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,43 +40,8 @@ const ReportIssue = () => {
 
     try {
       setLoading(true);
-
-      let imageUrl = null;
-      if (image) {
-        const fileExt = image.name.split(".").pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const { error: uploadError, data } = await supabase.storage
-          .from("issue-images")
-          .upload(fileName, image);
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from("issue-images")
-          .getPublicUrl(fileName);
-        
-        imageUrl = publicUrl;
-      }
-
-      // Convert location string to point
-      const [lat, lng] = location.split(",").map(coord => parseFloat(coord.trim()));
-      const point = `POINT(${lng} ${lat})`;
-
-      const { error } = await supabase.from("issues").insert([
-        {
-          title,
-          description,
-          severity,
-          location: point,
-          image_url: imageUrl,
-          reporter_id: user?.id,
-          status: "pending",
-        },
-      ]);
-
-      if (error) throw error;
+      // Simulate API call delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       toast({
         title: "Report submitted",
@@ -89,26 +49,13 @@ const ReportIssue = () => {
       });
       navigate("/citizen/dashboard");
     } catch (error: any) {
-      console.error("Failed to submit report:", error);
       toast({
         variant: "destructive",
         title: "Submission failed",
-        description: error.message || "Please try again later",
+        description: "Please try again later",
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -193,57 +140,23 @@ const ReportIssue = () => {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Location</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={getLocation}
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Capture Location
-                </Button>
-                {location && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    Location captured: {location}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="image">Image</Label>
-                <div className="relative">
-                  <input
-                    type="file"
-                    id="image"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => document.getElementById("image")?.click()}
-                  >
-                    <Camera className="w-4 h-4 mr-2" />
-                    Upload Image
-                  </Button>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label>Location</Label>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={getLocation}
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                Capture Location
+              </Button>
+              {location && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Location captured: {location}
+                </p>
+              )}
             </div>
-
-            {imagePreview && (
-              <div className="mt-4">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full max-h-64 object-cover rounded-lg"
-                />
-              </div>
-            )}
 
             <div className="flex items-center space-x-2">
               <Checkbox

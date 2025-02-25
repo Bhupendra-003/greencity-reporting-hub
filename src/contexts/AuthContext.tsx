@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+
+import React, { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
 
 interface Profile {
   id: string;
@@ -12,8 +11,7 @@ interface Profile {
 }
 
 interface AuthContextType {
-  user: User | null;
-  profile: Profile | null;
+  user: Profile | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
@@ -27,82 +25,59 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Mock user data for development
+const mockUsers = [
+  {
+    id: "1",
+    email: "citizen@example.com",
+    password: "password",
+    name: "John Doe",
+    type: "citizen" as const,
+    xp_points: 0
+  },
+  {
+    id: "2",
+    email: "ngo@example.com",
+    password: "password",
+    name: "Green Earth NGO",
+    type: "ngo" as const,
+    xp_points: 100
+  }
+];
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, name, type, xp_points")
-      .eq("id", userId)
-      .single();
-
-    if (error) {
-      console.error("Error fetching profile:", error);
-      return;
-    }
-
-    // Ensure type is either "citizen" or "ngo"
-    if (data && (data.type === "citizen" || data.type === "ngo")) {
-      setProfile({
-        id: data.id,
-        name: data.name,
-        type: data.type,
-        xp_points: data.xp_points || 0
-      });
-    }
-  };
-
   const login = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      setLoading(true);
+      const mockUser = mockUsers.find(u => u.email === email && u.password === password);
+      
+      if (!mockUser) {
+        throw new Error("Invalid credentials");
+      }
 
-      if (error) throw error;
-
+      const { password: _, ...profile } = mockUser;
+      setUser(profile);
+      
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
+      
+      navigate(`/${profile.type}/dashboard`);
     } catch (error: any) {
-      console.error("Login failed:", error);
       toast({
         variant: "destructive",
         title: "Login failed",
         description: error.message || "Please check your credentials and try again.",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -113,56 +88,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     type: "citizen" | "ngo"
   ) => {
     try {
-      // Sign up the user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      setLoading(true);
+      // In a real app, this would be handled by a backend service
+      const newUser = {
+        id: Math.random().toString(),
         email,
-        password,
-      });
-
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Create profile
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .insert([
-            {
-              id: authData.user.id,
-              name,
-              type,
-              xp_points: 0,
-            },
-          ]);
-
-        if (profileError) throw profileError;
-      }
-
+        name,
+        type,
+        xp_points: 0
+      };
+      
+      mockUsers.push({ ...newUser, password });
+      setUser(newUser);
+      
       toast({
         title: "Welcome!",
         description: "Your account has been created successfully.",
       });
+      
+      navigate(`/${type}/dashboard`);
     } catch (error: any) {
-      console.error("Registration failed:", error);
       toast({
         variant: "destructive",
         title: "Registration failed",
         description: error.message || "Please try again later.",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
     setUser(null);
-    setProfile(null);
     navigate("/");
   };
 
   return (
-    <AuthContext.Provider
-      value={{ user, profile, loading, login, register, logout }}
-    >
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
