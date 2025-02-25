@@ -32,10 +32,11 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary-light to-white">
+    <div style={{ backgroundImage: "url('https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+      className="min-h-screen bg-gradient-to-b from-primary-light to-white">
       <div className="container mx-auto px-4 py-12">
         <nav className="flex justify-between items-center mb-16">
-          <h1 className="text-2xl font-bold text-primary-dark">Greenify</h1>
+          <h1 className="text-2xl font-bold text-white">Greenify</h1>
           {user ? (
             <Button
               variant="outline"
@@ -48,24 +49,24 @@ const LandingPage = () => {
               <Button variant="outline" onClick={() => navigate("/login")}>
                 Login
               </Button>
-              <Button onClick={() => navigate("/register")}>Register</Button>
+              <Button className="bg-green-600 hover:bg-green-500" onClick={() => navigate("/register")}>Register</Button>
             </div>
           )}
         </nav>
 
         <main>
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-4xl font-bold text-primary-dark mb-6">
+            <h2 className="text-4xl font-bold text-white bg-black rounded-lg p-2 mb-6">
               Making Our Cities Better, Together
             </h2>
-            <p className="text-lg text-gray-600 mb-8">
+            <p className="text-lg text-gray-600 bg-white p-2 rounded-md mb-8">
               Join our community-driven platform to report and resolve urban issues.
               Together, we can create cleaner, safer, and more sustainable cities.
             </p>
             {!user && (
               <Button
                 size="lg"
-                className="animate-float"
+                className="animate-float bg-green-600"
                 onClick={() => navigate("/register")}
               >
                 Get Started
