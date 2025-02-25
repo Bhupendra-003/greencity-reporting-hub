@@ -21,7 +21,7 @@ interface Issue {
   description: string;
   severity: string;
   status: string;
-  location: string;
+  location: { x: number; y: number } | string;
   image_url: string | null;
   solution_image_url: string | null;
   reporter_id: string;
@@ -75,7 +75,9 @@ const NGODashboard = () => {
         ...issue,
         location: typeof issue.location === 'string' 
           ? issue.location 
-          : `${issue.location.x}, ${issue.location.y}` // Assuming location is a POINT type
+          : (issue.location as { x: number; y: number }) 
+            ? `${(issue.location as { x: number; y: number }).x}, ${(issue.location as { x: number; y: number }).y}`
+            : 'Unknown location'
       }));
 
       setIssues(transformedData);

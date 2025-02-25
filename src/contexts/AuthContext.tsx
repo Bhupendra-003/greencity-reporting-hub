@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -63,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("*")
+      .select("id, name, type, xp_points")
       .eq("id", userId)
       .single();
 
@@ -72,7 +71,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setProfile(data);
+    // Ensure type is either "citizen" or "ngo"
+    if (data && (data.type === "citizen" || data.type === "ngo")) {
+      setProfile({
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        xp_points: data.xp_points || 0
+      });
+    }
   };
 
   const login = async (email: string, password: string) => {
