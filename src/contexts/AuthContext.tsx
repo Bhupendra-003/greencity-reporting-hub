@@ -12,6 +12,10 @@ interface User {
   xp_points: number;
 }
 
+interface UserWithPassword extends User {
+  password: string;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -37,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const allUsers = [...usersData.citizens, ...usersData.ngos];
+      const allUsers = [...usersData.citizens, ...usersData.ngos] as UserWithPassword[];
       const foundUser = allUsers.find(
         (u) => u.email === email && u.password === password
       );
@@ -76,22 +80,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ) => {
     try {
       setLoading(true);
-      const newUser = {
+      const newUser: UserWithPassword = {
         id: Math.random().toString(),
         email,
+        password,
         name,
         type,
         xp_points: 0,
       };
 
+      // Update local storage with users data
+      const currentData = { ...usersData };
       if (type === "citizen") {
-        usersData.citizens.push({ ...newUser, password });
+        currentData.citizens.push(newUser);
       } else {
-        usersData.ngos.push({ ...newUser, password });
+        currentData.ngos.push(newUser);
       }
 
-      setUser(newUser);
-      localStorage.setItem("user", JSON.stringify(newUser));
+      // In a real app, this would be a backend call
+      localStorage.setItem("usersData", JSON.stringify(currentData));
+
+      const { password: _, ...userWithoutPassword } = newUser;
+      setUser(userWithoutPassword);
+      localStorage.setItem("user", JSON.stringify(userWithoutPassword));
       
       toast({
         title: "Welcome!",
@@ -114,7 +125,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateUserXP = (userId: string, newXP: number) => {
     const updatedUser = { ...user!, xp_points: newXP };
     setUser(updatedUser);
+    
+    // Update localStorage
     localStorage.setItem("user", JSON.stringify(updatedUser));
+    
+    // Update users data in localStorage
+    const currentData = JSON.parse(localStorage.getItem("usersData") || JSON.stringify(usersData));
+    const updatedData = {
+      ...currentData,
+      citizens: currentData.citizens.map((c: UserWithPassword) => 
+        c.id === userId ? { ...c, xp_points: newXP } : c
+      ),
+      ngos: currentData.ngos.map((n: UserWithPassword) => 
+        n.id === userId ? { ...n, xp_points: newXP } : n
+      )
+    };
+    localStorage.setItem("usersData", JSON.stringify(updatedData));
   };
 
   const logout = () => {
@@ -124,6 +150,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // Initialize users data in localStorage if not present
+    if (!localStorage.getItem("usersData")) {
+      localStorage.setItem("usersData", JSON.stringify(usersData));
+    }
+    
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
