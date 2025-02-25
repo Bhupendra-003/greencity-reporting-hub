@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-    apiKey: "AIzaSyBV1IyH4BTP16qb5mlR5ompeOxGVcO7i6A",
+    apiKey: "AIzaSyDQLQUKzfBlgn-Vv6aMy7ufgdQFK3Ayqus",
     baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
 });
 
@@ -19,8 +19,8 @@ async function getPriorityRating(query, severity) {
             },
         ],
     });
-
-    return response.choices[0].message.content;
+    
+    return parseInt(response.choices[0].message.content);
 }
 
 export default getPriorityRating;

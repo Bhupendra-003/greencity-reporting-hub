@@ -44,6 +44,22 @@ const ReportIssue = () => {
     try {
       setLoading(true);
 
+      // Get priority rating from server
+      const response = await fetch('/api/getPriorityRating', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: description, severity }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Fetch HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const priorityRating = data.rating;
+
       // Create new issue
       const newIssue = {
         id: Math.random().toString(),
@@ -57,7 +73,8 @@ const ReportIssue = () => {
         created_at: new Date().toISOString(),
         solver_id: null,
         solution_image_url: null,
-        solved_at: null
+        solved_at: null,
+        priorityRating, // Add priority rating to the issue
       };
 
       // Update issues in localStorage
