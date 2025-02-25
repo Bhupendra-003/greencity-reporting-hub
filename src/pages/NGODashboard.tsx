@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import issuesData from "../data/issues.json";
 
 interface Issue {
   id: string;
@@ -50,8 +49,8 @@ const NGODashboard = () => {
     const storedIssues = JSON.parse(localStorage.getItem("issuesData") || "{}");
     const sortedIssues = [...storedIssues.issues].sort((a, b) => {
       const severityOrder = { high: 3, medium: 2, low: 1 };
-      return severityOrder[b.severity as keyof typeof severityOrder] - 
-             severityOrder[a.severity as keyof typeof severityOrder];
+      return severityOrder[b.severity as keyof typeof severityOrder] -
+        severityOrder[a.severity as keyof typeof severityOrder];
     });
     setIssues(sortedIssues);
 
@@ -62,6 +61,14 @@ const NGODashboard = () => {
       .slice(0, 5);
     setTopNGOs(sortedNGOs);
   }, []);
+
+  const refreshTopNGOs = () => {
+    const storedData = JSON.parse(localStorage.getItem("usersData") || "{}");
+    const sortedNGOs = [...storedData.ngos]
+      .sort((a, b) => b.xp_points - a.xp_points)
+      .slice(0, 5);
+    setTopNGOs(sortedNGOs);
+  };
 
   const handleSolveIssue = async () => {
     if (!selectedIssue || !solutionImage) {
@@ -75,17 +82,17 @@ const NGODashboard = () => {
 
     try {
       const imageUrl = URL.createObjectURL(solutionImage);
-      
+
       // Update the issues data
-      const updatedIssues = issues.map(issue => 
-        issue.id === selectedIssue.id 
+      const updatedIssues = issues.map(issue =>
+        issue.id === selectedIssue.id
           ? {
-              ...issue,
-              status: "solved",
-              solver_id: user!.id,
-              solution_image_url: imageUrl,
-              solved_at: new Date().toISOString()
-            }
+            ...issue,
+            status: "solved",
+            solver_id: user!.id,
+            solution_image_url: imageUrl,
+            solved_at: new Date().toISOString()
+          }
           : issue
       );
 
@@ -94,10 +101,11 @@ const NGODashboard = () => {
       storedIssues.issues = updatedIssues;
       localStorage.setItem("issuesData", JSON.stringify(storedIssues));
       setIssues(updatedIssues);
-      
+
       // Update NGO's XP points (+200 per solved issue)
       const newXP = (user?.xp_points || 0) + 200;
       updateUserXP(user!.id, newXP);
+      refreshTopNGOs(); // Add this line
 
       toast({
         title: "Success",
@@ -114,7 +122,6 @@ const NGODashboard = () => {
       });
     }
   };
-
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       setSolutionImage(event.target.files[0]);
@@ -202,13 +209,12 @@ const NGODashboard = () => {
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      issue.severity === "high"
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${issue.severity === "high"
                         ? "bg-red-100 text-red-800"
                         : issue.severity === "medium"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-green-100 text-green-800"
-                    }`}
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-green-100 text-green-800"
+                      }`}
                   >
                     {issue.severity}
                   </span>
@@ -256,7 +262,7 @@ const NGODashboard = () => {
                 <h3 className="font-semibold text-lg">{selectedIssue.title}</h3>
                 <p className="text-sm text-gray-600">{selectedIssue.description}</p>
               </div>
-              
+
               <div>
                 <Label>Issue Image</Label>
                 {selectedIssue.image_url && (
