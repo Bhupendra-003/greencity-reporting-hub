@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,21 +14,25 @@ import {
 } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { MapPin } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Camera, MapPin } from "lucide-react";
 
 const ReportIssue = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState("");
   const [location, setLocation] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !description || !severity || !verified || !location) {
+    if (!title || !description || !severity || !verified) {
       toast({
         variant: "destructive",
         title: "Missing fields",
@@ -40,15 +43,14 @@ const ReportIssue = () => {
 
     try {
       setLoading(true);
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      // TODO: Implement actual report submission
       toast({
         title: "Report submitted",
         description: "Your issue has been reported successfully",
       });
       navigate("/citizen/dashboard");
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Failed to submit report:", error);
       toast({
         variant: "destructive",
         title: "Submission failed",
@@ -56,6 +58,19 @@ const ReportIssue = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImage(file);
+      // Create image preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -140,23 +155,57 @@ const ReportIssue = () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Location</Label>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={getLocation}
-              >
-                <MapPin className="w-4 h-4 mr-2" />
-                Capture Location
-              </Button>
-              {location && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Location captured: {location}
-                </p>
-              )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Location</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={getLocation}
+                >
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Capture Location
+                </Button>
+                {location && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Location captured: {location}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="image">Image</Label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    id="image"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => document.getElementById("image")?.click()}
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Upload Image
+                  </Button>
+                </div>
+              </div>
             </div>
+
+            {imagePreview && (
+              <div className="mt-4">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full max-h-64 object-cover rounded-lg"
+                />
+              </div>
+            )}
 
             <div className="flex items-center space-x-2">
               <Checkbox

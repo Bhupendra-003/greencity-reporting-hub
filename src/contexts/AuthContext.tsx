@@ -1,17 +1,18 @@
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
-interface Profile {
+interface User {
   id: string;
+  email: string;
   name: string;
   type: "citizen" | "ngo";
-  xp_points: number;
+  xp: number;
 }
 
 interface AuthContextType {
-  user: Profile | null;
+  user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
@@ -20,64 +21,59 @@ interface AuthContextType {
     name: string,
     type: "citizen" | "ngo"
   ) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user data for development
-const mockUsers = [
-  {
-    id: "1",
-    email: "citizen@example.com",
-    password: "password",
-    name: "John Doe",
-    type: "citizen" as const,
-    xp_points: 0
-  },
-  {
-    id: "2",
-    email: "ngo@example.com",
-    password: "password",
-    name: "Green Earth NGO",
-    type: "ngo" as const,
-    xp_points: 100
-  }
-];
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  useEffect(() => {
+    // Check for stored auth token and validate it
+    const checkAuth = async () => {
+      try {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
   const login = async (email: string, password: string) => {
     try {
-      setLoading(true);
-      const mockUser = mockUsers.find(u => u.email === email && u.password === password);
-      
-      if (!mockUser) {
-        throw new Error("Invalid credentials");
-      }
-
-      const { password: _, ...profile } = mockUser;
-      setUser(profile);
-      
+      // TODO: Implement actual authentication
+      const mockUser = {
+        id: "1",
+        email,
+        name: "John Doe",
+        type: "citizen" as const,
+        xp: 100,
+      };
+      setUser(mockUser);
+      localStorage.setItem("user", JSON.stringify(mockUser));
       toast({
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
-      
-      navigate(`/${profile.type}/dashboard`);
-    } catch (error: any) {
+      navigate(mockUser.type === "citizen" ? "/citizen/dashboard" : "/ngo/dashboard");
+    } catch (error) {
+      console.error("Login failed:", error);
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: error.message || "Please check your credentials and try again.",
+        description: "Please check your credentials and try again.",
       });
-      throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -88,39 +84,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     type: "citizen" | "ngo"
   ) => {
     try {
-      setLoading(true);
-      // In a real app, this would be handled by a backend service
-      const newUser = {
-        id: Math.random().toString(),
+      // TODO: Implement actual registration
+      const mockUser = {
+        id: "1",
         email,
         name,
         type,
-        xp_points: 0
+        xp: 0,
       };
-      
-      mockUsers.push({ ...newUser, password });
-      setUser(newUser);
-      
+      setUser(mockUser);
+      localStorage.setItem("user", JSON.stringify(mockUser));
       toast({
         title: "Welcome!",
         description: "Your account has been created successfully.",
       });
-      
-      navigate(`/${type}/dashboard`);
-    } catch (error: any) {
+      navigate(type === "citizen" ? "/citizen/dashboard" : "/ngo/dashboard");
+    } catch (error) {
+      console.error("Registration failed:", error);
       toast({
         variant: "destructive",
         title: "Registration failed",
-        description: error.message || "Please try again later.",
+        description: "Please try again later.",
       });
-      throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
-  const logout = async () => {
+  const logout = () => {
     setUser(null);
+    localStorage.removeItem("user");
     navigate("/");
   };
 
