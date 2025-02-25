@@ -38,22 +38,35 @@ const CitizenDashboard = () => {
   const navigate = useNavigate();
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
+  const [loading, setLoading] = useState(true);
+  const [storedIssues, setStoredIssues] = useState({ issues: [] });
+
   useEffect(() => {
-    // Load user's issues
-    const storedIssues = JSON.parse(localStorage.getItem("issuesData") || "{}");
-    const userIssues = storedIssues.issues.filter(
-      (issue: any) => issue.reporter_id === user?.id
-    );
-    setIssues(userIssues);
+    const fetchIssues = async () => {
+      try {
+        // Your fetch logic here
+        const data = JSON.parse(localStorage.getItem("issuesData") || "{}");
+        setStoredIssues(data);
+        const userIssues = data.issues.filter(
+          (issue: any) => issue.reporter_id === user?.id
+        );
+        setIssues(userIssues);
 
-    // Load top citizens
-    const storedData = JSON.parse(localStorage.getItem("usersData") || "{}");
-    const sortedCitizens = [...storedData.citizens]
-      .sort((a: any, b: any) => b.xp_points - a.xp_points)
-      .slice(0, 5);
-    setTopCitizens(sortedCitizens);
+        // Load top citizens
+        const storedData = JSON.parse(localStorage.getItem("usersData") || "{}");
+        const sortedCitizens = [...storedData.citizens]
+          .sort((a: any, b: any) => b.xp_points - a.xp_points)
+          .slice(0, 5);
+        setTopCitizens(sortedCitizens);
+      } catch (error) {
+        console.error('Failed to fetch issues:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchIssues();
   }, [user]);
-
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm">
